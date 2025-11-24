@@ -10,5 +10,5 @@ redis==5.0.8
 scikit-learn==1.5.1
 pandas==2.2.2
 joblib==1.4.2
-yt-dlp==2025.01.15   # пример, можно взять актуальную стабильную
-openai-whisper==20231117
+yt-dlp
+openai-whisper
