@@ -19,6 +19,8 @@ from ..services.deepseek_brief_checker import (
     BriefCheckError,
 )
 
+from ..services.kupikod_detection import detect_kupikod_in_text
+
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
 
@@ -57,16 +59,8 @@ def link_check_integration(
         )
 
     # ищем упоминание Kupikod в тексте
-    full_text = f"{transcript}\n{description}".lower()
-    kupi_keywords = [
-        "kupikod",
-        "купи код",
-        "купи-код",
-        "steam.kupikod.com",
-        "steam kupikod",
-        "купикод премиум",
-    ]
-    has_integration = any(k in full_text for k in kupi_keywords)
+    full_text = f"{transcript}\n{description}"
+    has_integration = detect_kupikod_in_text(full_text)
 
     brief_result = None
     if has_integration:
