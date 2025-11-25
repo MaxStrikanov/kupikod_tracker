@@ -18,7 +18,7 @@ from ..services.deepseek_brief_checker import (
     check_brief_with_deepseek,
     BriefCheckError,
 )
-
+from typing import List, Dict, Any
 from ..services.kupikod_detection import detect_kupikod_in_text
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
@@ -83,3 +83,65 @@ def link_check_integration(
         has_kupikod_integration=has_integration,
         brief=brief_result,
     )
+
+@router.get("/kupikod")
+def list_kupikod_integrations(db: Session = Depends(get_db)):
+    """
+    Список всех найденных интеграций Kupikod с привязанными постами.
+
+    Формат под фронт:
+    [
+      {
+        "id": ...,
+        "is_ad": ...,
+        "confidence": ...,
+        "promo_codes": [...],
+        "detected_at": "...",
+        "brief_check": {...} или null,
+        "post": {
+           "id": ...,
+           "blogger_id": ...,
+           "platform": "...",
+           "external_id": "...",
+           "text": "...",
+           "published_at": "..."
+        }
+      },
+      ...
+    ]
+    """
+    q = (
+        db.query(models.KupikodIntegration)
+        .join(models.Post)
+        .order_by(models.KupikodIntegration.detected_at.desc())
+    )
+    rows = q.all()
+
+    result: List[Dict[str, Any]] = []
+    for integ in rows:
+        post = integ.post
+        if not post:
+            continue
+
+        post_data: Dict[str, Any] = {
+            "id": post.id,
+            "blogger_id": post.blogger_id,
+            "platform": post.platform,
+            "external_id": post.external_id,
+            "text": post.text,
+            "published_at": post.published_at,
+        }
+
+        result.append(
+            {
+                "id": integ.id,
+                "is_ad": integ.is_ad,
+                "confidence": integ.confidence,
+                "promo_codes": integ.promo_codes,
+                "detected_at": integ.detected_at,
+                "brief_check": integ.brief_check,
+                "post": post_data,
+            }
+        )
+
+    return result
